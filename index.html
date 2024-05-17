@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Numérotation de vos photos de groupe</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Numérotation de vos photos de groupe</h1>
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="increment" class="form-label">Incrément:</label>
+                    <select class="form-select" aria-label="Sélection de l'incrément" aria-describedby="incrementHelp" name="increment" id="increment">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <div id="incrementHelp" class="form-text">Choisissez 1 pour numéroter de 1 en 1, 2 pour numéroter de 2 en 2, etc. A utiliser lorsque l'outil ne détecte pas tous les visages</div>
+                </div>
+                <div class="mb-3">
+                    <label for="formFile" class="form-label">Image</label>
+                    <input class="form-control" type="file" name="input" id="input" accept=".jpg, .jpeg, .png">
+                    <figure class="figure">
+                        <img src="#" class="figure-img img-fluid rounded" alt="" id="preview">
+                    </figure>
+                </div>
+                <button type="submit" class="btn btn-primary">Valider</button>
+            </form>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+        <script src="/index.js"></script>
+    </body>
+</html>
