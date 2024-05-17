@@ -57,7 +57,8 @@ def number(inputFile, outputFile, increment):
 def upload(increment: str, img=MultipartFile("input")):
 	date = datetime.today().strftime('%Y%m%d')
 	uuidGenerated = str(uuid.uuid4())
-	directoryPath = '/var/storage/' + date[0:4] + '/' + date[4:2] + '/' + date[6:2]
+	directoryPath = '/var/storage/' + date[0:4] + '/' + date[4:6] + '/' + date[6:8]
+	print(directoryPath)
 	os.makedirs(directoryPath, exist_ok=True)
 	if img.content_type == 'image/png':
 		extension = '.png'
@@ -69,7 +70,7 @@ def upload(increment: str, img=MultipartFile("input")):
 
 @request_map("/photo/{uuid}/{date}/originale")
 def downloadOriginale(uuidValue=PathValue("uuid"), date=PathValue("date")):
-	inputFileWithoutExtension = '/var/storage/' + date[0:4] + '/' + date[4:2] + '/' + date[6:2] + '/' + uuidValue
+	inputFileWithoutExtension = '/var/storage/' + date[0:4] + '/' + date[4:6] + '/' + date[6:8] + '/' + uuidValue
 	if os.path.isfile(inputFileWithoutExtension + '.png'):
 		contentType = 'image/png'
 		extension = '.png'
@@ -90,7 +91,7 @@ def downloadOriginale(uuidValue=PathValue("uuid"), date=PathValue("date")):
 
 @request_map("/photo/{uuid}/{date}/numerotee/{increment}")
 def downloadNumerotee(uuidValue=PathValue("uuid"), date=PathValue("date"), increment=PathValue("increment")):
-	inputFileWithoutExtension = '/var/storage/' + date[0:4] + '/' + date[4:2] + '/' + date[6:2] + '/' + uuidValue
+	inputFileWithoutExtension = '/var/storage/' + date[0:4] + '/' + date[4:6] + '/' + date[6:8] + '/' + uuidValue
 	if os.path.isfile(inputFileWithoutExtension + '.png'):
 		inputFile = inputFileWithoutExtension + '.png'
 	elif os.path.isfile(inputFileWithoutExtension + '.jpg'):
