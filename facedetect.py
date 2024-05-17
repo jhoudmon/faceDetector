@@ -58,7 +58,6 @@ def upload(increment: str, img=MultipartFile("input")):
 	date = datetime.today().strftime('%Y%m%d')
 	uuidGenerated = str(uuid.uuid4())
 	directoryPath = '/var/storage/' + date[0:4] + '/' + date[4:6] + '/' + date[6:8]
-	print(directoryPath)
 	os.makedirs(directoryPath, exist_ok=True)
 	if img.content_type == 'image/png':
 		extension = '.png'
