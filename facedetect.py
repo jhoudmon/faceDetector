@@ -1,37 +1,46 @@
 import dlib, cv2, math, os, tempfile, uuid
 from naja_atra import request_map, error_message, MultipartFile, StaticFile, Response, PathValue, Redirect, HttpError, server
 from datetime import datetime
+from mtcnn_cv2 import MTCNN
 
 def display_rectangle(gray, face):
-	cv2.rectangle(gray, (face.left(),face.top()), (face.right(), face.bottom()), (255, 255, 255), 3)
+	cv2.rectangle(gray, (face['left'],face['top']), (face['right'], face['bottom']), (255, 255, 255), 3)
 
 def display_number(gray, face, i):
 	text = str(i)
 	fontFace = cv2.FONT_HERSHEY_SIMPLEX
-	fontScale = 1
-	thickness = 3
+	fontScale = 0.5
+	thickness = 2
 	textSize = cv2.getTextSize(text, fontFace, fontScale, thickness)
-	cv2.putText(gray, text, (int((face.right()-face.left())/2) - int(int(textSize[0][0])/2) + face.left(), face.bottom() + int(textSize[0][1])), fontFace, fontScale, (255, 255, 255),thickness)
+	cv2.putText(gray, text, (int((face['right']-face['left'])/2) - int(int(textSize[0][0])/2) + face['left'], face['bottom'] + int(textSize[0][1])), fontFace, fontScale, (0, 0, 255),thickness)
 
 def face_la_plus_proche(faces, faceRef):
-	plusProche = min(faces, key=lambda face: 10000 if face.top() < faceRef.bottom() else math.sqrt((face.top() - faceRef.bottom())**2 + (face.left() - faceRef.left())**2))
-	if plusProche.top() < faceRef.bottom():
+	plusProche = min(faces, key=lambda face: 10000 if face['top'] < faceRef['bottom'] else math.sqrt((face['top'] - faceRef['bottom'])**2 + (face['left'] - faceRef['left'])**2))
+	if plusProche['top'] < faceRef['bottom']:
 		return
 	else:
 		return plusProche
 
 def face_la_plus_haute(faces):
-	return min(faces, key=lambda face: face.top())
+	return min(faces, key=lambda face: face['top'])
 
-def number(inputFile, outputFile, increment):
-	gray = cv2.imread(inputFile, cv2.IMREAD_COLOR)
-	face_detect = dlib.get_frontal_face_detector()
-
-	rects = face_detect(gray, 1)
+def number_with_opencv(inputFile, outputFile, increment):
+	img = cv2.imread(inputFile, cv2.IMREAD_COLOR)
+	
+	detector = MTCNN()
+	rects = detector.detect_faces(img)
 
 	faces = []
-	for (i, rect) in enumerate(rects):
-		faces.append(rect)
+
+	for result in rects:
+		x, y, w, h = result['box']
+		faces.append({
+			'left': x,
+			'top': y,
+			'bottom': y + h,
+			'right': x + w
+		})
+	
 
 	faceNumber = increment
 	while len(faces) > 0 :
@@ -40,18 +49,21 @@ def number(inputFile, outputFile, increment):
 		faceLaPlusHaute = face_la_plus_haute(faces)
 		faceLaPlusProche = face_la_plus_proche(faces, faceLaPlusHaute)
 		for face in faces:
-			if faceLaPlusProche is None or face.bottom() < faceLaPlusProche.top():
+			if faceLaPlusProche is None or face['bottom'] < faceLaPlusProche['top']:
 				ligneCourante.append(face)
 			else:
 				facesRestantes.append(face)
-		ligneCourante.sort(key=lambda face: face.left())
+		ligneCourante.sort(key=lambda face: face['left'])
 		
 		for face in ligneCourante:
-			display_number(gray, face, faceNumber)
+			display_number(img, face, faceNumber)
+			#display_rectangle(img, face)
 			faceNumber += increment
 		faces = facesRestantes
 		
-	cv2.imwrite(outputFile, gray)
+	cv2.imwrite(outputFile, img)
+
+	return len(faces)
     
 @request_map("/upload", method="POST")
 def upload(increment: str, img=MultipartFile("input")):
@@ -98,7 +110,7 @@ def downloadNumerotee(uuidValue=PathValue("uuid"), date=PathValue("date"), incre
 	else:
 		raise HttpError(404, "Photo inexistante")
 	outputFile = tempfile.mktemp('.jpg')
-	number(inputFile, outputFile, int(increment))
+	number_with_opencv(inputFile, outputFile, int(increment))
 	in_file = open(outputFile, "rb")
 	data = in_file.read()
 	in_file.close()
