@@ -4,15 +4,27 @@ from datetime import datetime
 from mtcnn_cv2 import MTCNN
 
 def display_rectangle(gray, face):
-	cv2.rectangle(gray, (face['left'],face['top']), (face['right'], face['bottom']), (255, 255, 255), 3)
+	if False:
+		cv2.rectangle(gray, (face['left'],face['top']), (face['right'], face['bottom']), (255, 255, 255), 3)
 
 def display_number(gray, face, i):
 	text = str(i)
 	fontFace = cv2.FONT_HERSHEY_SIMPLEX
-	fontScale = 0.5
+	fontScale = 0.6
 	thickness = 2
 	textSize = cv2.getTextSize(text, fontFace, fontScale, thickness)
-	cv2.putText(gray, text, (int((face['right']-face['left'])/2) - int(int(textSize[0][0])/2) + face['left'], face['bottom'] + int(textSize[0][1])), fontFace, fontScale, (0, 0, 255),thickness)
+	cv2.putText(
+		gray,
+		text, 
+		(	
+			int((face['right']-face['left'])/2) - int(int(textSize[0][0])/2) + face['left'], 
+   			face['bottom'] + int(textSize[0][1]) - int((face['top'] - face['bottom'])/4)
+		),
+		fontFace,
+		fontScale,
+		(0, 0, 255),
+		thickness
+	)
 
 def face_la_plus_proche(faces, faceRef):
 	plusProche = min(faces, key=lambda face: 10000 if face['top'] < faceRef['bottom'] else math.sqrt((face['top'] - faceRef['bottom'])**2 + (face['left'] - faceRef['left'])**2))
@@ -49,7 +61,7 @@ def number_with_opencv(inputFile, outputFile, increment):
 		faceLaPlusHaute = face_la_plus_haute(faces)
 		faceLaPlusProche = face_la_plus_proche(faces, faceLaPlusHaute)
 		for face in faces:
-			if faceLaPlusProche is None or face['bottom'] < faceLaPlusProche['top']:
+			if faceLaPlusProche is None or face['bottom'] <= faceLaPlusProche['top']:
 				ligneCourante.append(face)
 			else:
 				facesRestantes.append(face)
@@ -57,7 +69,7 @@ def number_with_opencv(inputFile, outputFile, increment):
 		
 		for face in ligneCourante:
 			display_number(img, face, faceNumber)
-			#display_rectangle(img, face)
+			display_rectangle(img, face)
 			faceNumber += increment
 		faces = facesRestantes
 		
