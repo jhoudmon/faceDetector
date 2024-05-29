@@ -126,6 +126,7 @@ def downloadNumerotee(uuidValue=PathValue("uuid"), date=PathValue("date"), incre
 	in_file = open(outputFile, "rb")
 	data = in_file.read()
 	in_file.close()
+	os.unlink(outputFile)
 	
 	return Response(200, {
 		'Content-Type': ['image/jpeg'],
