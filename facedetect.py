@@ -9,20 +9,35 @@ def display_rectangle(gray, face):
 
 def display_number(gray, face, i):
 	text = str(i)
+
 	fontFace = cv2.FONT_HERSHEY_SIMPLEX
-	fontScale = 0.6
 	thickness = 2
+	targetFontHeight = (face['bottom'] - face['top']) / 4
+	standardFontHeight = cv2.getTextSize(text, fontFace, 1, thickness)
+	fontScale = targetFontHeight / int(standardFontHeight[0][1])
+	
 	textSize = cv2.getTextSize(text, fontFace, fontScale, thickness)
+	rectangleSpace = int((face['bottom'] - face['top'])/3)
+	cv2.circle(
+		gray,
+		(
+			face['left'] + int((face['right']-face['left'])/2),
+			face['bottom'] + rectangleSpace + int(textSize[0][1] / 2)
+		),
+		textSize[0][1],
+		(255, 255, 255),
+		-1
+	)
 	cv2.putText(
 		gray,
 		text, 
 		(	
 			int((face['right']-face['left'])/2) - int(int(textSize[0][0])/2) + face['left'], 
-   			face['bottom'] + int(textSize[0][1]) - int((face['top'] - face['bottom'])/4)
+   			face['bottom'] + int(textSize[0][1]) + rectangleSpace
 		),
 		fontFace,
 		fontScale,
-		(0, 0, 255),
+		(0, 0, 0),
 		thickness
 	)
 
