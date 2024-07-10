@@ -1,7 +1,9 @@
-import dlib, cv2, math, os, tempfile, uuid
+import cv2, math, os, tempfile, uuid
 from naja_atra import request_map, error_message, MultipartFile, StaticFile, Response, PathValue, Redirect, HttpError, server
 from datetime import datetime
 from mtcnn_cv2 import MTCNN
+
+MINIMUM_WIDTH_FOR_NUMEROTATION = 2400
 
 def display_rectangle(gray, face):
 	if False:
@@ -53,6 +55,10 @@ def face_la_plus_haute(faces):
 
 def number_with_opencv(inputFile, outputFile, increment):
 	img = cv2.imread(inputFile, cv2.IMREAD_COLOR)
+
+	if (img.shape[1] < MINIMUM_WIDTH_FOR_NUMEROTATION):
+		print('ok')
+		img = cv2.resize(img, (MINIMUM_WIDTH_FOR_NUMEROTATION, int(img.shape[0] * MINIMUM_WIDTH_FOR_NUMEROTATION / img.shape[1])), interpolation = cv2.INTER_LINEAR)
 	
 	detector = MTCNN()
 	rects = detector.detect_faces(img)
