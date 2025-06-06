@@ -1,9 +1,20 @@
-import cv2, math, os, tempfile, uuid
+import cv2, math, os, tempfile, uuid, subprocess, magic
 from naja_atra import request_map, error_message, MultipartFile, StaticFile, Response, PathValue, Redirect, HttpError, server
 from datetime import datetime
 from mtcnn_cv2 import MTCNN
 
 MINIMUM_WIDTH_FOR_NUMEROTATION = 2400
+
+
+def copy_all_metadata(source_path, target_path):
+	subprocess.run([
+		"exiftool",
+		"-overwrite_original",
+		"-TagsFromFile", source_path,
+		"-all:all",
+		"-unsafe",
+		target_path
+	], check=True)
 
 def display_rectangle(gray, face):
 	if False:
@@ -46,7 +57,7 @@ def display_number(gray, face, i):
 def face_la_plus_proche(faces, faceRef):
 	plusProche = min(faces, key=lambda face: 10000 if face['top'] < faceRef['bottom'] else math.sqrt((face['top'] - faceRef['bottom'])**2 + (face['left'] - faceRef['left'])**2))
 	if plusProche['top'] < faceRef['bottom']:
-		return
+		return None
 	else:
 		return plusProche
 
@@ -57,7 +68,6 @@ def number_with_opencv(inputFile, outputFile, increment):
 	img = cv2.imread(inputFile, cv2.IMREAD_COLOR)
 
 	if (img.shape[1] < MINIMUM_WIDTH_FOR_NUMEROTATION):
-		print('ok')
 		img = cv2.resize(img, (MINIMUM_WIDTH_FOR_NUMEROTATION, int(img.shape[0] * MINIMUM_WIDTH_FOR_NUMEROTATION / img.shape[1])), interpolation = cv2.INTER_LINEAR)
 	
 	detector = MTCNN()
@@ -95,21 +105,25 @@ def number_with_opencv(inputFile, outputFile, increment):
 		faces = facesRestantes
 		
 	cv2.imwrite(outputFile, img)
-
-	return len(faces)
+	
+	copy_all_metadata(inputFile, outputFile)
     
 @request_map("/upload", method="POST")
 def upload(increment: str, img=MultipartFile("input")):
+	
 	date = datetime.today().strftime('%Y%m%d')
 	uuidGenerated = str(uuid.uuid4())
 	directoryPath = '/var/storage/' + date[0:4] + '/' + date[4:6] + '/' + date[6:8]
 	os.makedirs(directoryPath, exist_ok=True)
-	if img.content_type == 'image/png':
-		extension = '.png'
-	else:
-		extension = '.jpg'
-	inputFile = directoryPath + '/' + uuidGenerated + extension
+	inputFile = directoryPath + '/' + uuidGenerated
 	img.save_to_file(inputFile)
+	mime = magic.from_file(inputFile, mime=True)
+	if mime not in ['image/jpeg', 'image/png']:
+		os.unlink(inputFile)
+		raise HttpError(400, "Type MIME non supporté")
+
+	extension = '.jpg' if mime == 'image/jpeg' else '.png'
+	os.rename(inputFile, inputFile + extension)
 	return Redirect("/photo/%s/%s/numerotee/%s" % (uuidGenerated, date, increment))
 
 @request_map("/photo/{uuid}/{date}/originale")
@@ -160,12 +174,12 @@ def index():
 	return StaticFile("%s/index.html" % root, "text/html; charset=utf-8")
 
 @request_map("/index.js", method="GET")
-def favicon():
+def indexJS():
 	root = os.path.dirname(os.path.abspath(__file__))
 	return StaticFile("%s/index.js" % root, "text/javascript; charset=utf-8")
 
 @request_map("/favicon.ico", method="GET")
-def indexJS():
+def favicon():
 	root = os.path.dirname(os.path.abspath(__file__))
 	return StaticFile("%s/favicon.ico" % root, "image/x-icon")
 
