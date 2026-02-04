@@ -4,7 +4,7 @@ from datetime import datetime
 from mtcnn_cv2 import MTCNN
 
 MINIMUM_WIDTH_FOR_NUMEROTATION = 2400
-
+detector = MTCNN()
 
 def copy_all_metadata(source_path, target_path):
 	subprocess.run([
@@ -21,38 +21,67 @@ def display_rectangle(gray, face):
 		cv2.rectangle(gray, (face['left'],face['top']), (face['right'], face['bottom']), (255, 255, 255), 3)
 
 def display_number(gray, face, i):
-	text = str(i)
+    text = str(i)
 
-	fontFace = cv2.FONT_HERSHEY_SIMPLEX
-	thickness = 2
-	targetFontHeight = (face['bottom'] - face['top']) / 4
-	standardFontHeight = cv2.getTextSize(text, fontFace, 1, thickness)
-	fontScale = targetFontHeight / int(standardFontHeight[0][1])
-	
-	textSize = cv2.getTextSize(text, fontFace, fontScale, thickness)
-	rectangleSpace = int((face['bottom'] - face['top'])/3)
-	cv2.circle(
-		gray,
-		(
-			face['left'] + int((face['right']-face['left'])/2),
-			face['bottom'] + rectangleSpace + int(textSize[0][1] / 2)
-		),
-		textSize[0][1],
-		(255, 255, 255),
-		-1
-	)
-	cv2.putText(
-		gray,
-		text, 
-		(	
-			int((face['right']-face['left'])/2) - int(int(textSize[0][0])/2) + face['left'], 
-   			face['bottom'] + int(textSize[0][1]) + rectangleSpace
-		),
-		fontFace,
-		fontScale,
-		(0, 0, 0),
-		thickness
-	)
+    fontFace = cv2.FONT_HERSHEY_SIMPLEX
+    thickness = 2
+    alpha = 0.35  # 0 = invisible, 1 = opaque
+
+    targetFontHeight = (face['bottom'] - face['top']) / 4
+    (standardSize, _) = cv2.getTextSize(text, fontFace, 1, thickness)
+    fontScale = targetFontHeight / standardSize[1]
+
+    (textWidth, textHeight), baseline = cv2.getTextSize(
+        text, fontFace, fontScale, thickness
+    )
+
+    rectangleSpace = int((face['bottom'] - face['top']) / 3)
+
+    center_x = face['left'] + int((face['right'] - face['left']) / 2)
+    center_y = face['bottom'] + rectangleSpace + int(textHeight / 2)
+
+    padding_x = int(textWidth * 0.35)
+    padding_y = int(textHeight * 0.45)
+
+    axes = (
+        int(textWidth / 2) + padding_x,
+        int(textHeight / 2) + padding_y
+    )
+
+    # --- Overlay pour la transparence ---
+    overlay = gray.copy()
+
+    cv2.ellipse(
+        overlay,
+        (center_x, center_y),
+        axes,
+        0, 0, 360,
+        (255, 255, 255),
+        -1
+    )
+
+    # Fusion alpha
+    cv2.addWeighted(
+        overlay, alpha,
+        gray, 1 - alpha,
+        0,
+        gray
+    )
+
+    # Texte opaque
+    text_x = center_x - int(textWidth / 2)
+    text_y = center_y + int(textHeight / 2)
+
+    cv2.putText(
+        gray,
+        text,
+        (text_x, text_y),
+        fontFace,
+        fontScale,
+        (0, 0, 0),
+        thickness,
+        cv2.LINE_AA
+    )
 
 def face_la_plus_proche(faces, faceRef):
 	plusProche = min(faces, key=lambda face: 10000 if face['top'] < faceRef['bottom'] else math.sqrt((face['top'] - faceRef['bottom'])**2 + (face['left'] - faceRef['left'])**2))
@@ -65,12 +94,12 @@ def face_la_plus_haute(faces):
 	return min(faces, key=lambda face: face['top'])
 
 def number_with_opencv(inputFile, outputFile, increment):
+	global detector
 	img = cv2.imread(inputFile, cv2.IMREAD_COLOR)
 
 	if (img.shape[1] < MINIMUM_WIDTH_FOR_NUMEROTATION):
 		img = cv2.resize(img, (MINIMUM_WIDTH_FOR_NUMEROTATION, int(img.shape[0] * MINIMUM_WIDTH_FOR_NUMEROTATION / img.shape[1])), interpolation = cv2.INTER_LINEAR)
 	
-	detector = MTCNN()
 	rects = detector.detect_faces(img)
 
 	faces = []
