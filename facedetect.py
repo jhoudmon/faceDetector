@@ -96,7 +96,7 @@ def number_with_opencv(inputFile, outputFile, increment):
     # --- FUSION TRANSPARENTE ---
     cv2.addWeighted(overlay, ALPHA_OVAL, img, 1 - ALPHA_OVAL, 0, img)
 
-    # --- TEXTE ET CONTOUR OPAQUE ---
+    # --- TEXTE OPAQUE ---
     faceNumber = increment
     for ligne in sorted_lines:
         for face in ligne:
@@ -112,7 +112,6 @@ def number_with_opencv(inputFile, outputFile, increment):
             cy = face['bottom'] + rectangleSpace + th // 2
             axes = (tw // 2 + int(tw * 0.35), th // 2 + int(th * 0.45))
 
-            cv2.ellipse(img, (cx, cy), axes, 0, 0, 360, (0, 0, 0), 2)
             cv2.putText(img, text, (cx - tw // 2, cy + th // 2), font, fontScale, (0, 0, 0), thickness, cv2.LINE_AA)
 
             faceNumber += increment
