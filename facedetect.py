@@ -79,7 +79,7 @@ def number_with_opencv(inputFile, outputFile, increment):
         for face in ligne:
             text = str(faceNumber)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            thickness = 2
+            thickness = 1
             targetFontHeight = (face['bottom'] - face['top']) / 4
             (stdSize, _) = cv2.getTextSize(text, font, 1, thickness)
             fontScale = targetFontHeight / stdSize[1]
